@@ -25,7 +25,7 @@ public class Game1 : Game
         // TODO: Add your initialization logic here
         ballPosition = new Vector2(_graphics.PreferredBackBufferWidth / 2, 
                                    _graphics.PreferredBackBufferHeight / 2); // Sets ball start pos to half of screen's width and height (i.e. the center)
-        ballSpeed = 100f;
+        ballSpeed = 200f;   // pixels per second
 
         base.Initialize();
     }
@@ -42,36 +42,46 @@ public class Game1 : Game
     // Update/Draw is the main game loop
     protected override void Update(GameTime gameTime) // Called multiple times per second, updates game state (checks collisions, gets input, plays audio etc.)
     {
-        if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-            Exit();
-
         // TODO: Add your update logic here
 
-        // Time since last update
-        float updatedBallSpeed = ballSpeed * (float)gameTime.ElapsedGameTime.TotalSeconds;
-
+        // Get keyboard state
         var kstate = Keyboard.GetState();
-        
+
+        // Time since last update in seconds (ensures movement is consistent regardless of framerate)
+        float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        // Create vector to hold the input direction
+        Vector2 inputDirection = Vector2.Zero;
+
         // WASD movement
         if (kstate.IsKeyDown(Keys.W))
         {
-            ballPosition.Y -= updatedBallSpeed;
+            inputDirection.Y -= 1;
         }
 
         if (kstate.IsKeyDown(Keys.S))
         {
-            ballPosition.Y += updatedBallSpeed;
+            inputDirection.Y += 1;
         }
 
         if (kstate.IsKeyDown(Keys.A))
         {
-            ballPosition.X -= updatedBallSpeed;
+            inputDirection.X -= 1;
         }
 
         if (kstate.IsKeyDown(Keys.D))
         {
-            ballPosition.X += updatedBallSpeed;
+            inputDirection.X += 1;
         }
+
+        // Normalise input direction so that moving diagonally doesn't make the player move faster
+        if (inputDirection != Vector2.Zero)
+        {
+            inputDirection.Normalize();
+        }
+
+        // Update ball position based on normalised input direction, speed and deltaTime
+        ballPosition += inputDirection * ballSpeed * deltaTime;
 
         // Prevent ball from going off screen (x-axis)
         if (ballPosition.X > _graphics.PreferredBackBufferWidth - ballTexture.Width / 2)
