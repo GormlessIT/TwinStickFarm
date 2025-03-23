@@ -1,0 +1,12 @@
+# Ignore build and VS files
+bin/
+obj/
+.vs/
+*.suo
+*.user
+*.sdf
+*.VC.db
+
+# Ignore MonoGame-generated files
+*.mgcb
+*.xnb
