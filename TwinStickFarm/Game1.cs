@@ -35,12 +35,18 @@ public class Game1 : Game
     protected override void Initialize() // Called once per game, initializes game state (loads settings, sets up objects etc.)
     {
         // TODO: Add your initialization logic here
-        ballPosition = new Vector2(_graphics.PreferredBackBufferWidth / 2, 
-                                   _graphics.PreferredBackBufferHeight / 2); // Sets ball start pos to half of screen's width and height (i.e. the center)
+
+        // Sets ball start pos to half of world's width and height (center of game world)
+        ballPosition = new Vector2(worldWidth / 2, worldHeight / 2); 
         ballSpeed = 200f;   // pixels per second
 
         // Set viewport for camera so it knows how to offset the drawing
         camera.Viewport = new Rectangle(0, 0, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
+
+        // Define world bounds for camera
+        camera.WorldBounds = new Rectangle(0, 0, worldWidth, worldHeight);
+
+        camera.Position = ballPosition;
 
         base.Initialize();
     }
@@ -71,26 +77,11 @@ public class Game1 : Game
         Vector2 inputDirection = Vector2.Zero;
 
         // WASD movement
-        if (kstate.IsKeyDown(Keys.W))
-        {
-            inputDirection.Y -= 1;
-        }
-
-        if (kstate.IsKeyDown(Keys.S))
-        {
-            inputDirection.Y += 1;
-        }
-
-        if (kstate.IsKeyDown(Keys.A))
-        {
-            inputDirection.X -= 1;
-        }
-
-        if (kstate.IsKeyDown(Keys.D))
-        {
-            inputDirection.X += 1;
-        }
-
+        if (kstate.IsKeyDown(Keys.W)) inputDirection.Y -= 1;
+        if (kstate.IsKeyDown(Keys.S)) inputDirection.Y += 1;
+        if (kstate.IsKeyDown(Keys.A)) inputDirection.X -= 1;
+        if (kstate.IsKeyDown(Keys.D)) inputDirection.X += 1;
+       
         // Normalise input direction so that moving diagonally doesn't make the player move faster
         if (inputDirection != Vector2.Zero)
         {
@@ -120,7 +111,7 @@ public class Game1 : Game
             ballPosition.Y = ballTexture.Height / 2;
         }
 
-        camera.Position = ballPosition;
+        camera.Update(ballPosition, deltaTime);
 
         base.Update(gameTime);
     }

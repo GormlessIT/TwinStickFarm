@@ -15,8 +15,17 @@ namespace TwinStickFarm
         // Zoom level of the camera (1 = normal, > 1 = zoom in, <1 = zoom out)
         public float Zoom { get; set; }
 
-        // Store viewport size to center the camera
+        // Store viewport size for offset calculations
         public Rectangle Viewport { get; set; }
+
+        // Dead zone around camera center where player moves without camera following
+        public Rectangle DeadZone { get; set; }
+
+        // Bounds of the world that the camera can move in
+        public Rectangle WorldBounds { get; set; }
+
+        // Smoothing factor: higher values make camera catch up to player faster
+        public float Smoothing { get; set; } = 5f;
 
         // View transformation matrix used when drawing
         public Matrix Transform
@@ -42,6 +51,60 @@ namespace TwinStickFarm
         {
             Position = Vector2.Zero;
             Zoom = 1f;
+            // Initialize default DeadZone size 
+            DeadZone = new Rectangle(-100, -100, 200, 200); // 200x200px centered on camera
+
+        }
+
+        // Update camera position based on player position and dead zone
+        public void Update(Vector2 playerPosition, float deltaTime)
+        {
+            // Calculate camera's center in world coordinates
+            Vector2 cameraCenter = Position;
+
+            // Calculate offset between playerPosition and cameraCenter
+            Vector2 offset = playerPosition - cameraCenter;
+
+            // Check if playerPosition is outside of the dead zone
+            if (offset.X < DeadZone.Left || offset.X > DeadZone.Right ||
+                offset.Y < DeadZone.Top  || offset.Y > DeadZone.Bottom)
+            {
+                // Calculate desired position for the camera so that player is inside the dead zone when camera moves
+                Vector2 desiredPosition = Position;
+
+                if (offset.X < DeadZone.Left)
+                {
+                    desiredPosition.X = playerPosition.X - DeadZone.Left;
+                }
+                else if (offset.X > DeadZone.Right)
+                {
+                    desiredPosition.X = playerPosition.X - DeadZone.Right;
+                }
+
+                if (offset.Y < DeadZone.Top)
+                {
+                    desiredPosition.Y = playerPosition.Y - DeadZone.Top;
+                }
+                else if (offset.Y > DeadZone.Bottom)
+                {
+                    desiredPosition.Y = playerPosition.Y - DeadZone.Bottom;
+                }
+
+                // Smoothly interpolate camera position towards desired position
+                Position = Vector2.Lerp(Position, desiredPosition, Smoothing * deltaTime);
+            }
+
+            // Clamp camera position to world bounds
+            // Calculate the half-width and half-height of the viewport (taking zoom into account)
+            float halfWidth = (Viewport.Width / Zoom) / 2f;
+            float halfHeight = (Viewport.Height / Zoom) / 2f;
+
+            // Clamp X and Y so camera doesn't reveal space outside of the world bounds
+            float clampedX = MathHelper.Clamp(Position.X, WorldBounds.Left + halfWidth, WorldBounds.Right - halfWidth);
+            float clampedY = MathHelper.Clamp(Position.Y, WorldBounds.Top + halfHeight, WorldBounds.Bottom - halfHeight);
+
+            // Update camera position with clamped values
+            Position = new Vector2(clampedX, clampedY);
         }
     }
 }
