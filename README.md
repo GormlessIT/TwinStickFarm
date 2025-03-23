@@ -1,2 +1,2 @@
 # TwinStickFarm
- Farm-themed Twin Stick Arena Shooter Roguelike
+WIP Farm-themed Twin Stick Arena Shooter Roguelike
