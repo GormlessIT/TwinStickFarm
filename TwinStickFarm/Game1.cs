@@ -6,10 +6,12 @@ namespace TwinStickFarm;
 
 public class Game1 : Game
 {
-    Texture2D ballTexture;
-    Vector2 ballPosition;
-    float ballSpeed;
+    private Texture2D ballTexture;
+    private Vector2 ballPosition;
+    private float ballSpeed;
     
+    private Camera2D camera;
+
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
@@ -18,6 +20,8 @@ public class Game1 : Game
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
+
+        camera = new Camera2D();
     }
 
     protected override void Initialize() // Called once per game, initializes game state (loads settings, sets up objects etc.)
@@ -26,6 +30,9 @@ public class Game1 : Game
         ballPosition = new Vector2(_graphics.PreferredBackBufferWidth / 2, 
                                    _graphics.PreferredBackBufferHeight / 2); // Sets ball start pos to half of screen's width and height (i.e. the center)
         ballSpeed = 200f;   // pixels per second
+
+        // Set viewport for camera so it knows how to offset the drawing
+        camera.Viewport = new Rectangle(0, 0, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
 
         base.Initialize();
     }
@@ -44,11 +51,11 @@ public class Game1 : Game
     {
         // TODO: Add your update logic here
 
-        // Get keyboard state
-        var kstate = Keyboard.GetState();
-
         // Time since last update in seconds (ensures movement is consistent regardless of framerate)
         float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        // Get keyboard state
+        var kstate = Keyboard.GetState();
 
         // Create vector to hold the input direction
         Vector2 inputDirection = Vector2.Zero;
@@ -103,15 +110,18 @@ public class Game1 : Game
             ballPosition.Y = ballTexture.Height / 2;
         }
 
+        camera.Position = ballPosition;
+
         base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime) // Called multiple times per second, draws game visuals on screen
     {
+        // Background
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
         // TODO: Add your drawing code here
-        _spriteBatch.Begin();
+        _spriteBatch.Begin(transformMatrix: camera.Transform);
 
         _spriteBatch.Draw(
             ballTexture, 
