@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System;
+using System.Linq;
 
 namespace TwinStickFarm;
 
@@ -19,6 +21,10 @@ public class Game1 : Game
     // Tiles for checkered background
     private int tileSize = 50;
     private Texture2D pixelTexture;
+
+    // Prevents rapid cycling through zoom levels
+    private bool qPressed = false;
+    private bool ePressed = false;
 
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
@@ -111,6 +117,51 @@ public class Game1 : Game
             ballPosition.Y = ballTexture.Height / 2;
         }
 
+        // Camera zoom in/out 
+        if (kstate.IsKeyDown(Keys.Q) && !qPressed)
+        {
+            // Zoom out: Move to next lower zoom level, if not at FAR
+            if (camera.CurrentZoomLevel != "FAR")
+            {
+                // Get the next lower zoom level
+                var zoomLevels = camera.ZoomLevels.Keys.ToList();
+                int currentIndex = zoomLevels.IndexOf(camera.CurrentZoomLevel);
+                if (currentIndex > 0)
+                {
+                    camera.CurrentZoomLevel = zoomLevels[currentIndex - 1];
+                }
+            }
+
+            qPressed = true;
+        }
+        else if (kstate.IsKeyDown(Keys.E) && !ePressed)
+        {
+            // Zoom in: Move to next higher zoom level, if not at CLOSE
+            if (camera.CurrentZoomLevel != "CLOSE")
+            {
+                // Get the next higher zoom level
+                var zoomLevels = camera.ZoomLevels.Keys.ToList();
+                int currentIndex = zoomLevels.IndexOf(camera.CurrentZoomLevel);
+                if (currentIndex < zoomLevels.Count - 1)
+                {
+                    camera.CurrentZoomLevel = zoomLevels[currentIndex + 1];
+                }
+            }
+
+            ePressed = true;
+        }
+
+        // If Q or E is not pressed, reset the flag
+        if (kstate.IsKeyUp(Keys.Q))
+        {
+            qPressed = false;
+        }
+        if (kstate.IsKeyUp(Keys.E))
+        {
+            ePressed = false;
+        }
+
+        // Update camera with new position
         camera.Update(ballPosition, deltaTime);
 
         base.Update(gameTime);

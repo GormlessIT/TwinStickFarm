@@ -12,8 +12,11 @@ namespace TwinStickFarm
         // Position of the camera in the world space
         public Vector2 Position { get; set; }
 
-        // Zoom level of the camera (1 = normal, > 1 = zoom in, <1 = zoom out)
-        public float Zoom { get; set; }
+        // Dictionary of zoom levels
+        public Dictionary<string, float> ZoomLevels { get; set; }
+
+        // Current zoom level
+        public string CurrentZoomLevel { get; set; }
 
         // Store viewport size for offset calculations
         public Rectangle Viewport { get; set; }
@@ -36,7 +39,7 @@ namespace TwinStickFarm
                 Matrix translation = Matrix.CreateTranslation(new Vector3(-Position, 0));
 
                 // Create a scale matrix to zoom in/out
-                Matrix scale = Matrix.CreateScale(Zoom);
+                Matrix scale = Matrix.CreateScale(GetZoomFactor());
 
                 // Add offset so that camera's position is in the center of the viewport
                 Matrix offset = Matrix.CreateTranslation(new Vector3(Viewport.Width * 0.5f, Viewport.Height * 0.5f, 0));
@@ -50,10 +53,32 @@ namespace TwinStickFarm
         public Camera2D()
         {
             Position = Vector2.Zero;
-            Zoom = 1f;
-            // Initialize default DeadZone size 
-            DeadZone = new Rectangle(-100, -100, 200, 200); // 200x200px centered on camera
 
+            // Initialize zoom levels dictionary
+            ZoomLevels = new Dictionary<string, float>
+            {
+                { "FAR", 0.65f },
+                { "DEFAULT", 0.9f },
+                { "CLOSE", 1.25f }
+            };
+
+            CurrentZoomLevel = "DEFAULT";
+
+            // Initialize default DeadZone size 
+            DeadZone = new Rectangle(-100, -100, 100, 100); // 100x100px centered on camera
+        }
+
+        // Get zoom factor based on current zoom level
+        private float GetZoomFactor()
+        {
+            if(ZoomLevels.ContainsKey(CurrentZoomLevel))
+            {
+                return ZoomLevels[CurrentZoomLevel];
+            }
+            else
+            {
+                return 1f;
+            }
         }
 
         // Update camera position based on player position and dead zone
@@ -96,8 +121,8 @@ namespace TwinStickFarm
 
             // Clamp camera position to world bounds
             // Calculate the half-width and half-height of the viewport (taking zoom into account)
-            float halfWidth = (Viewport.Width / Zoom) / 2f;
-            float halfHeight = (Viewport.Height / Zoom) / 2f;
+            float halfWidth = (Viewport.Width / GetZoomFactor()) / 2f;
+            float halfHeight = (Viewport.Height / GetZoomFactor()) / 2f;
 
             // Clamp X and Y so camera doesn't reveal space outside of the world bounds
             float clampedX = MathHelper.Clamp(Position.X, WorldBounds.Left + halfWidth, WorldBounds.Right - halfWidth);
