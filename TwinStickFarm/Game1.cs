@@ -12,6 +12,14 @@ public class Game1 : Game
     
     private Camera2D camera;
 
+    // World size in pixels
+    private int worldWidth = 2000;
+    private int worldHeight = 2000;
+
+    // Tiles for checkered background
+    private int tileSize = 50;
+    private Texture2D pixelTexture;
+
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
@@ -44,6 +52,8 @@ public class Game1 : Game
 
         // TODO: use this.Content to load your game content here
         ballTexture = Content.Load<Texture2D>("ball");
+        pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
+        pixelTexture.SetData(new Color[] { Color.White });
     }
 
     // Update/Draw is the main game loop
@@ -90,20 +100,20 @@ public class Game1 : Game
         // Update ball position based on normalised input direction, speed and deltaTime
         ballPosition += inputDirection * ballSpeed * deltaTime;
 
-        // Prevent ball from going off screen (x-axis)
-        if (ballPosition.X > _graphics.PreferredBackBufferWidth - ballTexture.Width / 2)
+        // Prevent ball from going off the edge of the world (x-axis)
+        if (ballPosition.X > worldWidth - ballTexture.Width / 2)
         {
-            ballPosition.X = _graphics.PreferredBackBufferWidth - ballTexture.Width / 2;
+            ballPosition.X = worldWidth - ballTexture.Width / 2;
         }
         else if (ballPosition.X < ballTexture.Width / 2)
         {
             ballPosition.X = ballTexture.Width / 2;
         }
 
-        // Prevent ball from going off screen (y-axis)
-        if (ballPosition.Y > _graphics.PreferredBackBufferHeight - ballTexture.Height / 2)
+        // Prevent ball from going off the edge of the world (y-axis)
+        if (ballPosition.Y > worldHeight - ballTexture.Height / 2)
         {
-            ballPosition.Y = _graphics.PreferredBackBufferHeight - ballTexture.Height / 2;
+            ballPosition.Y = worldHeight - ballTexture.Height / 2;
         }
         else if (ballPosition.Y < ballTexture.Height / 2)
         {
@@ -123,6 +133,23 @@ public class Game1 : Game
         // TODO: Add your drawing code here
         _spriteBatch.Begin(transformMatrix: camera.Transform);
 
+        // Draw the checkered background first
+        for (int x = 0; x < worldWidth; x += tileSize)
+        {
+            for (int y = 0; y < worldHeight; y += tileSize)
+            {
+                // Alternate colors based on the tile's position
+                // This creates the checkered effect: if the sum of the grid indices is even, use one color; otherwise, another.
+                Color tileColor = ((x / tileSize + y / tileSize) % 2 == 0) ? Color.PaleTurquoise : Color.PaleVioletRed;
+
+                // Draw the tile as a rectangle
+                _spriteBatch.Draw(pixelTexture,
+                    new Rectangle(x, y, tileSize, tileSize),
+                    tileColor);
+            }
+        }
+
+        // Draw the ball
         _spriteBatch.Draw(
             ballTexture, 
             ballPosition, 
