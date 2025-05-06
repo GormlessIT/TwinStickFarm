@@ -1,32 +1,17 @@
 ﻿using Microsoft.Xna.Framework;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TwinStickFarm
 {
     public class Camera2D
     {
-        // Position of the camera in the world space
-        public Vector2 Position { get; set; }
-
-        // Dictionary of zoom levels
+        // Instance variables
+        public Vector2 Position { get; set; } 
         public Dictionary<string, float> ZoomLevels { get; set; }
-
-        // Current zoom level
         public string CurrentZoomLevel { get; set; }
-
-        // Store viewport size for offset calculations
-        public Rectangle Viewport { get; set; }
-
-        // Dead zone around camera center where player moves without camera following
+        public Rectangle Viewport { get; set; } // For offset calculations
         public Rectangle DeadZone { get; set; }
-
-        // Bounds of the world that the camera can move in
         public Rectangle WorldBounds { get; set; }
-
         // Smoothing factor: higher values make camera catch up to player faster
         public float Smoothing { get; set; } = 5f;
 
