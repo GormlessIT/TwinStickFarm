@@ -1,12 +1,24 @@
-# Ignore build and VS files
+# Build outputs
 bin/
 obj/
+
+# MonoGame content pipeline outputs
+Content/bin/
+Content/obj/
+*.xnb
+
+# Visual Studio workspace & caches
 .vs/
+[Tt]winStickFarm/.vs/      # Since VS puts a .vs folder in project subfolder
 *.suo
 *.user
 *.sdf
 *.VC.db
 
-# Ignore MonoGame-generated files
-*.mgcb
-*.xnb
+# Copilot / IntelliSense caches
+**/CopilotIndices/
+**/*.vsidx
+
+# Rider, Resharper, etc. (if you ever use them)
+.idea/
+*.sln.iml
