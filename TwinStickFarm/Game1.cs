@@ -5,10 +5,20 @@ using System.Linq;
 
 namespace TwinStickFarm
 {
+    public enum GameState
+    {
+        MainMenu,
+        Playing,
+        Paused, // TODO: Implement pause menu
+        GameOver // TODO: Implement game over screen
+    }
+
     public class Game1 : Game
     {
+        // Instance variables
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
+        private GameState currentGameState = GameState.MainMenu; // Game starts at main menu
         private Camera2D camera;
         private Player player;
         // World size in pixels
@@ -62,6 +72,33 @@ namespace TwinStickFarm
         // Update/Draw is the main game loop
         protected override void Update(GameTime gameTime) // Called multiple times per second, updates game state (checks collisions, gets input, plays audio etc.)
         {
+            // Always run first
+            base.Update(gameTime);
+
+            // Check which game state is active
+            switch (currentGameState)
+            {
+                case GameState.MainMenu:
+                    // Handle main menu logic
+                    HandleMainMenuUpdate(gameTime);
+                    break;
+
+                case GameState.Playing:
+                    // Handle game logic
+                    HandleGameUpdate(gameTime);
+                    break;
+
+                case GameState.Paused:
+                    // Handle pause menu logic
+                    HandlePauseUpdate(gameTime);
+                    break;
+
+                case GameState.GameOver:
+                    // Handle game over logic
+                    HandleGameOverUpdate(gameTime);
+                    break;
+            }    
+
             // Time since last update in seconds
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
@@ -116,8 +153,35 @@ namespace TwinStickFarm
 
         protected override void Draw(GameTime gameTime) // Called multiple times per second, draws game visuals on screen
         {
-            // Background
+            // Clear the screen
             GraphicsDevice.Clear(Color.CornflowerBlue);
+
+            // Always call first
+            base.Draw(gameTime);
+
+            // Draw based on current game state
+            switch(currentGameState)
+            {
+                case GameState.MainMenu:
+                    // Draw main menu
+                    DrawMainMenu(gameTime);
+                    break;
+
+                case GameState.Playing:
+                    // Draw game
+                    DrawGame(gameTime);
+                    break;
+
+                case GameState.Paused:
+                    // Draw pause menu
+                    DrawPause(gameTime);
+                    break;
+
+                case GameState.GameOver:
+                    // Draw game over screen
+                    DrawGameOver(gameTime);
+                    break;
+            }
 
             spriteBatch.Begin(transformMatrix: camera.Transform);
 
