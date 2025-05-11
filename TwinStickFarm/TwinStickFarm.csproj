@@ -13,6 +13,7 @@
   <ItemGroup>
     <None Remove="Icon.ico" />
     <None Remove="Icon.bmp" />
+      <MonoGameContentReference Include="Content\Content.mgcb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Icon.ico">

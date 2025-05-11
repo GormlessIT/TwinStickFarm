@@ -1,7 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.Linq;
+using System.Collections.Generic;
+using TwinStickFarm.States;
 
 namespace TwinStickFarm
 {
@@ -9,41 +10,42 @@ namespace TwinStickFarm
     {
         MainMenu,
         Playing,
-        Paused, // TODO: Implement pause menu
-        GameOver // TODO: Implement game over screen
+        Paused,
+        GameOver
     }
 
     public class Game1 : Game
     {
         // Instance variables
+
+        // 1. Core MonoGame objects
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
-        private GameState currentGameState = GameState.MainMenu; // Game starts at main menu
+
+        // 2. Game state management
+        private Dictionary<GameState, IGameState> states;
+        private IGameState currentState;
+
+        // 3. Game objects
         private Camera2D camera;
         private Player player;
-        // World size in pixels
-        private int worldWidth = 2000;
+        private int worldWidth = 2000;  // Size in pixels
         private int worldHeight = 2000;
-        // Tiles for checkered background
         private int tileSize = 50;
         private Texture2D pixelTexture;
-        // Prevents rapid cycling through zoom levels
-        private bool qPressed, ePressed = false;
 
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
-            camera = new Camera2D();
         }
 
         protected override void Initialize() // Called once per game, initializes game state (loads settings, sets up objects etc.)
         {
-            // Set viewport for camera so it knows how to offset the drawing
+            // Camera Setup
+            camera = new Camera2D();
             camera.Viewport = new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
-
-            // Define world bounds for camera
             camera.WorldBounds = new Rectangle(0, 0, worldWidth, worldHeight);
 
             base.Initialize();
@@ -51,9 +53,15 @@ namespace TwinStickFarm
 
         protected override void LoadContent() // Called once per game, loads all content (textures, sounds, etc.)
         {
+            // 1. Core MonoGame objects
+
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
+            // 2. Shared assets for all states
+            var font = Content.Load<SpriteFont>("DefaultFont");
+
+            // 3. Create game objects
             var ballTexture = Content.Load<Texture2D>("ball");
             player = new Player(
                 ballTexture,
@@ -62,92 +70,50 @@ namespace TwinStickFarm
                 worldWidth,
                 worldHeight
                 );
-
             camera.Position = player.Position;
 
             pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
-            pixelTexture.SetData(new Color[] { Color.White });
+            pixelTexture.SetData(new[] { Color.White });
+
+            // 4. Initialize game states
+            states = new Dictionary<GameState, IGameState>
+            {
+                { GameState.MainMenu, new MainMenuState(this, spriteBatch, font) },
+                { GameState.Playing,
+                    new PlayingState(
+                        this,
+                        spriteBatch,
+                        font,
+                        player,
+                        camera,
+                        pixelTexture,
+                        worldWidth,
+                        worldHeight,
+                        tileSize
+                    )
+                },
+                { GameState.Paused, new PausedState(this, spriteBatch, font) },
+                { GameState.GameOver, new GameOverState(this, spriteBatch, font) }
+            };
+
+            // 5. Set the initial state
+            ChangeState(GameState.MainMenu);
+        }
+
+        /// <summary>
+        /// Switches between states, calling Exit on the old state and Enter on the new one
+        /// </summary>
+        public void ChangeState(GameState newState)
+        {
+            currentState?.Exit();
+            currentState = states[newState];
+            currentState.Enter();
         }
 
         // Update/Draw is the main game loop
         protected override void Update(GameTime gameTime) // Called multiple times per second, updates game state (checks collisions, gets input, plays audio etc.)
         {
-            // Always run first
-            base.Update(gameTime);
-
-            // Check which game state is active
-            switch (currentGameState)
-            {
-                case GameState.MainMenu:
-                    // Handle main menu logic
-                    HandleMainMenuUpdate(gameTime);
-                    break;
-
-                case GameState.Playing:
-                    // Handle game logic
-                    HandleGameUpdate(gameTime);
-                    break;
-
-                case GameState.Paused:
-                    // Handle pause menu logic
-                    HandlePauseUpdate(gameTime);
-                    break;
-
-                case GameState.GameOver:
-                    // Handle game over logic
-                    HandleGameOverUpdate(gameTime);
-                    break;
-            }    
-
-            // Time since last update in seconds
-            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-            KeyboardState kstate = Keyboard.GetState();
-
-            // Player movement + clamping to world bounds
-            player.Update(gameTime);
-
-            // Camera zoom in/out 
-            if (kstate.IsKeyDown(Keys.Q) && !qPressed)
-            {
-                // Zoom out: Move to next lower zoom level, if not at FAR
-                if (camera.CurrentZoomLevel != "FAR")
-                {
-                    // Get the next lower zoom level
-                    var zoomLevels = camera.ZoomLevels.Keys.ToList();
-                    int currentIndex = zoomLevels.IndexOf(camera.CurrentZoomLevel);
-                    if (currentIndex > 0)
-                    {
-                        camera.CurrentZoomLevel = zoomLevels[currentIndex - 1];
-                    }
-                }
-
-                qPressed = true;
-            }
-            else if (kstate.IsKeyDown(Keys.E) && !ePressed)
-            {
-                // Zoom in: Move to next higher zoom level, if not at CLOSE
-                if (camera.CurrentZoomLevel != "CLOSE")
-                {
-                    // Get the next higher zoom level
-                    var zoomLevels = camera.ZoomLevels.Keys.ToList();
-                    int currentIndex = zoomLevels.IndexOf(camera.CurrentZoomLevel);
-                    if (currentIndex < zoomLevels.Count - 1)
-                    {
-                        camera.CurrentZoomLevel = zoomLevels[currentIndex + 1];
-                    }
-                }
-
-                ePressed = true;
-            }
-
-            // If Q or E is not pressed, reset the flag
-            if (kstate.IsKeyUp(Keys.Q)) qPressed = false;
-            if (kstate.IsKeyUp(Keys.E)) ePressed = false;
-
-            // Update camera with new position
-            camera.Update(player.Position, deltaTime);
-
+            currentState.Update(gameTime);
             base.Update(gameTime);
         }
 
@@ -155,56 +121,9 @@ namespace TwinStickFarm
         {
             // Clear the screen
             GraphicsDevice.Clear(Color.CornflowerBlue);
-
-            // Always call first
+            // Delegate all drawing to the current state
+            currentState.Draw(gameTime);
             base.Draw(gameTime);
-
-            // Draw based on current game state
-            switch(currentGameState)
-            {
-                case GameState.MainMenu:
-                    // Draw main menu
-                    DrawMainMenu(gameTime);
-                    break;
-
-                case GameState.Playing:
-                    // Draw game
-                    DrawGame(gameTime);
-                    break;
-
-                case GameState.Paused:
-                    // Draw pause menu
-                    DrawPause(gameTime);
-                    break;
-
-                case GameState.GameOver:
-                    // Draw game over screen
-                    DrawGameOver(gameTime);
-                    break;
-            }
-
-            spriteBatch.Begin(transformMatrix: camera.Transform);
-
-            // Draw the checkered background first
-            for (int x = 0; x < worldWidth; x += tileSize)
-            {
-                for (int y = 0; y < worldHeight; y += tileSize)
-                {
-                    // Alternate colors based on the tile's position
-                    // This creates the checkered effect: if the sum of the grid indices is even, use one color; otherwise, another.
-                    Color tileColor = ((x / tileSize + y / tileSize) % 2 == 0) ? Color.PaleTurquoise : Color.PaleVioletRed;
-
-                    // Draw the tile as a rectangle
-                    spriteBatch.Draw(pixelTexture,
-                        new Rectangle(x, y, tileSize, tileSize),
-                        tileColor);
-                }
-            }
-
-            player.Draw(spriteBatch); // Draw player character
-
-            spriteBatch.End();
-            base.Draw(gameTime); // Draw the game visuals
         }
     }
 }
