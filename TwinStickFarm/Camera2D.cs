@@ -42,9 +42,9 @@ namespace TwinStickFarm
             // Initialize zoom levels dictionary
             ZoomLevels = new Dictionary<string, float>
             {
-                { "FAR", 0.65f },
-                { "DEFAULT", 0.9f },
-                { "CLOSE", 1.25f }
+                { "FAR", 1f },
+                { "DEFAULT", 1.5f },
+                { "CLOSE", 2f }
             };
 
             CurrentZoomLevel = "DEFAULT";

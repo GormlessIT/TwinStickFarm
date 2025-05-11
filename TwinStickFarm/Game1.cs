@@ -39,6 +39,13 @@ namespace TwinStickFarm
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+
+            // Set fullscreen mode and adapt to the current screen resolution
+            var mode = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
+            graphics.PreferredBackBufferWidth = mode.Width;
+            graphics.PreferredBackBufferHeight = mode.Height;
+            graphics.IsFullScreen = true;
+            graphics.ApplyChanges();
         }
 
         protected override void Initialize() // Called once per game, initializes game state (loads settings, sets up objects etc.)
@@ -78,7 +85,7 @@ namespace TwinStickFarm
             // 4. Initialize game states
             states = new Dictionary<GameState, IGameState>
             {
-                { GameState.MainMenu, new MainMenuState(this, spriteBatch, font) },
+                { GameState.MainMenu, new MainMenuState(this, spriteBatch, font, pixelTexture) },
                 { GameState.Playing,
                     new PlayingState(
                         this,
@@ -92,7 +99,7 @@ namespace TwinStickFarm
                         tileSize
                     )
                 },
-                { GameState.Paused, new PausedState(this, spriteBatch, font) },
+                { GameState.Paused, new PausedState(this, spriteBatch, font, pixelTexture) },
                 { GameState.GameOver, new GameOverState(this, spriteBatch, font) }
             };
 
