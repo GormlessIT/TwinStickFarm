@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -12,11 +14,13 @@ namespace TwinStickFarm.States
         private Game1 game;
         private readonly Texture2D pixelTexture;
 
-        private Button playButton, quitButton;
+        private readonly Button playButton, quitButton, yesButton, noButton;
 
-        private MouseState previousMState;
+        private List<Button> menuButtons;
+        private List<Button> confirmButtons;
+        private int selectedIndex;
         private bool inQuitConfirm;
-        private Button yesButton, noButton;
+        private KeyboardState previousKState;
 
         public MainMenuState(Game1 game, SpriteBatch spriteBatch, SpriteFont font, Texture2D pixelTexture)
         {
@@ -25,19 +29,29 @@ namespace TwinStickFarm.States
             this.font = font;
             this.pixelTexture = pixelTexture;
 
+            const int btnWidth = 200, btnHeight = 50;
+            // Center X in virtual coordinate space
+            int centerX = (Config.VirtualWidth - btnWidth) / 2;
+
             // Lay out buttons
-            playButton = new Button(spriteBatch, font, pixelTexture, "Play", new Rectangle(300, 200, 200, 50));
-            quitButton = new Button(spriteBatch, font, pixelTexture, "Quit", new Rectangle(300, 300, 200, 50));
+            playButton = new Button(spriteBatch, font, pixelTexture, "Play", new Rectangle(centerX, 200, btnWidth, btnHeight));
+            quitButton = new Button(spriteBatch, font, pixelTexture, "Quit", new Rectangle(centerX, 300, btnWidth, btnHeight));
 
             // Confirmation buttons
-            yesButton = new Button(spriteBatch, font, pixelTexture, "Yes", new Rectangle(300, 200, 200, 50));
-            noButton = new Button(spriteBatch, font, pixelTexture, "No", new Rectangle(300, 300, 200, 50));
+            yesButton = new Button(spriteBatch, font, pixelTexture, "Yes", new Rectangle(centerX, 200, btnWidth, btnHeight));
+            noButton = new Button(spriteBatch, font, pixelTexture, "No", new Rectangle(centerX, 300, btnWidth, btnHeight));
+
+            menuButtons = new List<Button> { playButton, quitButton };
+            confirmButtons = new List<Button> { yesButton, noButton };
+            selectedIndex = 0;  // Start on "Play"
+            inQuitConfirm = false;
         }
 
         public void Enter()
         {
-            previousMState = Mouse.GetState();
+            previousKState = Keyboard.GetState();
             inQuitConfirm = false;
+            selectedIndex = 0;
         }
         public void Exit()
         {
@@ -46,33 +60,55 @@ namespace TwinStickFarm.States
 
         public void Update(GameTime gameTime)
         {
-            var mstate = Mouse.GetState();
+            var kstate = Keyboard.GetState();
 
-            if (inQuitConfirm)
+            // Up Arrow: Move selection up
+            if (kstate.IsKeyDown(Keys.Up) && previousKState.IsKeyUp(Keys.Up))
             {
-                if (yesButton.IsClicked(mstate, previousMState))
-                {
-                    game.Exit();
-                }
-                else if (noButton.IsClicked(mstate, previousMState))
-                {
-                    inQuitConfirm = false;
-                }
+                selectedIndex =
+                    (selectedIndex - 1 + (inQuitConfirm ? confirmButtons.Count : menuButtons.Count))
+                    % (inQuitConfirm ? confirmButtons.Count : menuButtons.Count);
             }
-            else
+            // Down Arrow: Move selection down
+            else if (kstate.IsKeyDown(Keys.Down) && previousKState.IsKeyUp(Keys.Down))
             {
-                if (playButton.IsClicked(mstate, previousMState))
-                {
-                    game.ChangeState(GameState.Playing);
-                    return;
-                }
-                else if (quitButton.IsClicked(mstate, previousMState))
-                {
-                    inQuitConfirm = true;
-                }
+                selectedIndex = (selectedIndex + 1) % (inQuitConfirm ? confirmButtons.Count : menuButtons.Count);
             }
 
-            previousMState = mstate;
+            // Enter: Use whichever button is selected
+            if (kstate.IsKeyDown(Keys.Enter) && previousKState.IsKeyUp(Keys.Enter))
+            {
+                if (!inQuitConfirm)
+                {
+                    // Main menu
+                    switch (selectedIndex)
+                    {
+                        case 0: // Play
+                            game.ChangeState(GameState.Playing);
+                            break;
+                        case 1: // Quit
+                            inQuitConfirm = true;
+                            selectedIndex = 0;  // default to “Yes”
+                            break;
+                    }
+                }
+                else
+                {
+                    // Confirmation
+                    switch (selectedIndex)
+                    {
+                        case 0: // Yes
+                            game.Exit();
+                            break;
+                        case 1: // No
+                            inQuitConfirm = false;
+                            selectedIndex = 1; // back to “Quit” in the main menu
+                            break;
+                    }
+                }
+            }
+
+            previousKState = kstate;
         }
 
         public void Draw(GameTime gameTime)
@@ -84,20 +120,30 @@ namespace TwinStickFarm.States
 
             if (inQuitConfirm)
             {
+                // Dim virtual screen
+                spriteBatch.Draw(pixelTexture, new Rectangle(0, 0, Config.VirtualWidth, Config.VirtualHeight), Color.Black * 0.5f);
 
-                // Dim Background
-                var viewport = spriteBatch.GraphicsDevice.Viewport;
-                spriteBatch.Draw(pixelTexture, new Rectangle(0, 0, viewport.Width, viewport.Height), Color.Black * 0.5f);
+                // Prompt
+                spriteBatch.DrawCenteredString(font, "Are you sure you want to quit?", new Vector2(Config.VirtualWidth/2, 150), Color.White);
 
-                spriteBatch.DrawString(font, "Quit the game?", new Vector2(300, 150), Color.White);
-                yesButton.Draw(Color.DarkRed, Color.White);
-                noButton.Draw(Color.DarkGreen, Color.White);
+                // Draw Yes/No with higlight
+                for (int i = 0; i < confirmButtons.Count; i++)
+                {
+                    var foreground = (i == selectedIndex) ? Color.Yellow : Color.White;
+                    confirmButtons[i].Draw(Color.DarkSlateGray, foreground);
+                }
             }
             else
             {
-                spriteBatch.DrawString(font, "Dillweed Ranch", new Vector2(320, 100), Color.White);
-                playButton.Draw(Color.DarkSlateGray, Color.White);
-                quitButton.Draw(Color.DarkRed, Color.White);
+                // Title
+                spriteBatch.DrawCenteredString(font, "Dillweed Ranch", new Vector2(Config.VirtualWidth/2, 100), Color.White);
+
+                // Draw Play/Quit with highlight
+                for (int i = 0; i < menuButtons.Count; i++)
+                {
+                    var foreground = (i == selectedIndex) ? Color.Yellow : Color.White;
+                    menuButtons[i].Draw(Color.DarkSlateGray, foreground);
+                }
             }
                 spriteBatch.End();
         }

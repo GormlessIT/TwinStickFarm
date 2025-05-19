@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using TwinStickFarm;
 
 namespace TwinStickFarm.UI
 {
@@ -31,18 +32,13 @@ namespace TwinStickFarm.UI
                 color: background
             );
 
-            // Draw text
-            var textSize = font.MeasureString(Text);
-            var pos = new Vector2(
-                Bounds.X + (Bounds.Width - textSize.X) / 2,
-                Bounds.Y + (Bounds.Height - textSize.Y) / 2
-            );
-            spriteBatch.DrawString(
-                spriteFont: font,
+            // Draw centered text
+            spriteBatch.DrawCenteredString(
+                font: font,
                 text: Text,
-                position: pos,
-                color: foreground
-            );
+                Bounds.Center.ToVector2(),
+                foreground
+                );
         }
 
         public bool IsClicked(MouseState mstate, MouseState previousMState)
