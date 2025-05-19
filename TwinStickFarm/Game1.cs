@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System;
 using System.Collections.Generic;
 using TwinStickFarm.States;
 
@@ -34,6 +35,11 @@ namespace TwinStickFarm
         private int tileSize = 50;
         private Texture2D pixelTexture;
 
+        // 4. Resolution scaling
+        private const int virtualWidth = 640;
+        private const int virtualHeight = 360;
+        public Matrix ScaleMatrix { get; private set; }
+
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -46,6 +52,23 @@ namespace TwinStickFarm
             graphics.PreferredBackBufferHeight = mode.Height;
             graphics.IsFullScreen = true;
             graphics.ApplyChanges();
+
+            // Get real screen resolution (backbuffer size)
+            var bb = GraphicsDevice.Viewport;
+            float scaleX = bb.Width / (float)virtualWidth;
+            float scaleY = bb.Height / (float)virtualHeight;
+            float scale = Math.Min(scaleX, scaleY);
+
+            // Letterbox offsets
+            float viewW = virtualWidth * scale;
+            float viewH = virtualHeight * scale;
+            float offsetX = (bb.Width - viewW) / 2f;
+            float offsetY = (bb.Height - viewH) / 2f;
+
+            // Build matrix: First scale, then translate
+            ScaleMatrix = Matrix.CreateScale(scale, scale, 1f) *
+                          Matrix.CreateTranslation(offsetX, offsetY, 0f);
+
         }
 
         protected override void Initialize() // Called once per game, initializes game state (loads settings, sets up objects etc.)

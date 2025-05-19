@@ -109,7 +109,11 @@ namespace TwinStickFarm.States
 
         public void Draw(GameTime gameTime)
         {
-            spriteBatch.Begin(transformMatrix: camera.Transform);
+            var fullMatrix = game.ScaleMatrix * camera.Transform;
+            spriteBatch.Begin(
+                transformMatrix: fullMatrix,
+                samplerState: SamplerState.PointClamp
+                );
 
             // Draw the checkered background 
             for (int x = 0; x < worldWidth; x += tileSize)

@@ -119,8 +119,11 @@ namespace TwinStickFarm.States
             previousMState = mstate;
         }
         public void Draw(GameTime gameTime) 
-        { 
-            spriteBatch.Begin();
+        {
+            spriteBatch.Begin(
+                transformMatrix: game.ScaleMatrix,
+                samplerState: SamplerState.PointClamp
+                );
 
             if (inQuitConfirm)
             {

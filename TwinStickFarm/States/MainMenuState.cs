@@ -77,7 +77,10 @@ namespace TwinStickFarm.States
 
         public void Draw(GameTime gameTime)
         {
-            spriteBatch.Begin();
+            spriteBatch.Begin(
+                transformMatrix: game.ScaleMatrix,
+                samplerState: SamplerState.PointClamp
+                );
 
             if (inQuitConfirm)
             {
@@ -92,7 +95,7 @@ namespace TwinStickFarm.States
             }
             else
             {
-                spriteBatch.DrawString(font, "Dillweed Ranch", new Vector2(280, 120), Color.White);
+                spriteBatch.DrawString(font, "Dillweed Ranch", new Vector2(320, 100), Color.White);
                 playButton.Draw(Color.DarkSlateGray, Color.White);
                 quitButton.Draw(Color.DarkRed, Color.White);
             }
